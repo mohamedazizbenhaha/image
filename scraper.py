@@ -1,10 +1,9 @@
-import instaloader
+import instascrape
 from pymongo import MongoClient
 import os
 import logging
 from dotenv import load_dotenv
 from datetime import datetime
-import sys
 
 # Charger les variables d'environnement depuis le fichier .env
 load_dotenv()
@@ -14,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout)
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -33,48 +32,18 @@ def connect_to_mongodb():
         return db[mongo_collection]
     except Exception as e:
         logger.error(f"Erreur lors de la connexion à MongoDB : {e}")
-        sys.exit(1)
+        raise
 
-def authenticate_instaloader(loader):
-    """Authentifie Instaloader avec les identifiants fournis."""
-    username = "aziz.ben.haha"
-    password = "hello.kaka1998.am7a7a"
-
-    try:
-        loader.login(username, password)
-        logger.info("Authentification réussie.")
-    except instaloader.exceptions.BadCredentialsException:
-        logger.error("Identifiants invalides. Vérifiez votre nom d'utilisateur et votre mot de passe.")
-        sys.exit(1)
-    except instaloader.exceptions.ConnectionException as e:
-        logger.error(f"Erreur de connexion lors de l'authentification : {e}")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Erreur inattendue lors de l'authentification : {e}")
-        sys.exit(1)
-
-def scrape_hashtag(hashtag, max_posts=100):
+def scrape_instagram_posts(hashtag, max_posts=100):
     """Scrape les publications Instagram pour un hashtag donné et les stocke dans MongoDB."""
-    loader = instaloader.Instaloader()
-
-    # Authentification
-    authenticate_instaloader(loader)
-
     # Connexion à MongoDB
     collection = connect_to_mongodb()
 
-    # Scraping des publications
-    logger.info(f"Début du scraping pour le hashtag #{hashtag}")
-    try:
-        # Add headers to mimic a browser request
-        loader.context.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+    # Création d'un profil Instagram
+    profile = instascrape.Profile(f"https://www.instagram.com/explore/tags/{hashtag}/")
 
-        posts = instaloader.Hashtag.from_name(loader.context, hashtag).get_posts()
-    except instaloader.exceptions.InstaloaderException as e:
-        logger.error(f"Erreur lors de la récupération des publications : {e}")
-        sys.exit(1)
+    # Extraction des posts
+    posts = profile.get_posts()
 
     count = 0
     for post in posts:
@@ -82,6 +51,7 @@ def scrape_hashtag(hashtag, max_posts=100):
             break
 
         try:
+            # Extraction des données du post
             post_data = {
                 'post_id': post.shortcode,
                 'username': post.owner_username,
@@ -92,6 +62,20 @@ def scrape_hashtag(hashtag, max_posts=100):
                 'comments_count': post.comments,
                 'date': post.date_utc.isoformat()
             }
+
+            # Extraction des commentaires
+            comments = []
+            for comment in post.comments:
+                comment_data = {
+                    'comment_id': comment.id,
+                    'text': comment.text,
+                    'created_at': datetime.fromtimestamp(comment.created_at).strftime("%Y-%m-%d %H:%M:%S"),
+                    'owner_username': comment.owner_username,
+                    'like_count': comment.like_count
+                }
+                comments.append(comment_data)
+
+            post_data['comments'] = comments
 
             # Insertion dans MongoDB
             collection.update_one({'post_id': post_data['post_id']}, {'$set': post_data}, upsert=True)
@@ -104,5 +88,5 @@ def scrape_hashtag(hashtag, max_posts=100):
     logger.info(f"Scraping terminé. {count} publications ont été sauvegardées.")
 
 if __name__ == "__main__":
-    hashtag = os.getenv('HASHTAG', 'example')
-    scrape_hashtag(hashtag)
+    hashtag = os.getenv('HASHTAG', 'usa')
+    scrape_instagram_posts(hashtag)
