@@ -101,5 +101,5 @@ def scrape_hashtag(hashtag, max_posts=100):
     logger.info(f"Scraping terminé. {count} publications ont été sauvegardées.")
 
 if __name__ == "__main__":
-    hashtag = os.getenv('HASHTAG', 'example')
+    hashtag = os.getenv('HASHTAG', 'usa')
     scrape_hashtag(hashtag)
