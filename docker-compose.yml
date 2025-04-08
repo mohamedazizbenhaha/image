@@ -7,13 +7,21 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongodb_data:/data/db
 
   scraper:
     build: .
     container_name: instagram_scraper
     depends_on:
       - mongodb
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=mongodb://$MONGO_HOST:$MONGO_PORT/$MONGO_DB
+      - MONGO_COLLECTION=$MONGO_COLLECTION
+      - HASHTAG=$HASHTAG
+      - INSTA_USERNAME=$INSTA_USERNAME
+      - INSTA_PASSWORD=$INSTA_PASSWORD
 
 volumes:
-  mongo_data:
+  mongodb_data:
