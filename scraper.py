@@ -37,30 +37,28 @@ def connect_to_mongodb():
 
 def authenticate_instaloader(loader):
     """Authentifie Instaloader avec les identifiants fournis."""
-    username = os.getenv('INSTA_USERNAME')
-    password = os.getenv('INSTA_PASSWORD')
-    if username and password:
-        try:
-            loader.login(username, password)
-            logger.info("Authentification réussie.")
-        except instaloader.exceptions.BadCredentialsException:
-            logger.error("Identifiants invalides. Vérifiez votre nom d'utilisateur et votre mot de passe.")
-            sys.exit(1)
-        except instaloader.exceptions.ConnectionException as e:
-            logger.error(f"Erreur de connexion lors de l'authentification : {e}")
-            sys.exit(1)
-        except Exception as e:
-            logger.error(f"Erreur inattendue lors de l'authentification : {e}")
-            sys.exit(1)
-    else:
-        logger.warning("Aucun identifiant fourni. Certaines données peuvent ne pas être accessibles.")
+    username = "aziz.ben.haha"
+    password = "hello.kaka1998.am7a7a"
+
+    try:
+        loader.login(username, password)
+        logger.info("Authentification réussie.")
+    except instaloader.exceptions.BadCredentialsException:
+        logger.error("Identifiants invalides. Vérifiez votre nom d'utilisateur et votre mot de passe.")
+        sys.exit(1)
+    except instaloader.exceptions.ConnectionException as e:
+        logger.error(f"Erreur de connexion lors de l'authentification : {e}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Erreur inattendue lors de l'authentification : {e}")
+        sys.exit(1)
 
 def scrape_hashtag(hashtag, max_posts=100):
     """Scrape les publications Instagram pour un hashtag donné et les stocke dans MongoDB."""
     loader = instaloader.Instaloader()
 
     # Authentification
-    #authenticate_instaloader(loader)
+    authenticate_instaloader(loader)
 
     # Connexion à MongoDB
     collection = connect_to_mongodb()
@@ -68,6 +66,11 @@ def scrape_hashtag(hashtag, max_posts=100):
     # Scraping des publications
     logger.info(f"Début du scraping pour le hashtag #{hashtag}")
     try:
+        # Add headers to mimic a browser request
+        loader.context.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+
         posts = instaloader.Hashtag.from_name(loader.context, hashtag).get_posts()
     except instaloader.exceptions.InstaloaderException as e:
         logger.error(f"Erreur lors de la récupération des publications : {e}")
@@ -101,5 +104,5 @@ def scrape_hashtag(hashtag, max_posts=100):
     logger.info(f"Scraping terminé. {count} publications ont été sauvegardées.")
 
 if __name__ == "__main__":
-    hashtag = os.getenv('HASHTAG', 'usa')
+    hashtag = os.getenv('HASHTAG', 'example')
     scrape_hashtag(hashtag)
