@@ -2,6 +2,10 @@ import instaloader
 from pymongo import MongoClient
 import os
 import logging
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -64,6 +68,5 @@ def scrape_hashtag(hashtag, max_posts=100):
     logger.info(f"Scraping terminé. {count} publications ont été sauvegardées.")
 
 if __name__ == "__main__":
-    hashtag = os.getenv('HASHTAG', 'donaldtrump')
-    max_posts = int(os.getenv('MAX_POSTS', 100))
-    scrape_hashtag(hashtag, max_posts)
+    hashtag = os.getenv('HASHTAG', 'example')
+    scrape_hashtag(hashtag)
