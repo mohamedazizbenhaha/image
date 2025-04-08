@@ -1,2 +1,3 @@
 instaloader
 pymongo
+python-dotenv
